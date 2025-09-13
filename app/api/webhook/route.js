@@ -13,11 +13,16 @@ function verifyWebhookSignature(body, signature, secret) {
 export async function POST(request) {
   try {
     const body = await request.text();
+
+    const secret = process.env.CLICKUP_WEBHOOK_SECRET;
     const signature = request.headers.get('x-signature');
 
-    if (process.env.CLICKUP_WEBHOOK_SECRET) {
-      const isValid = verifyWebhookSignature(body, signature, process.env.CLICKUP_WEBHOOK_SECRET);
-      if (!isValid) return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    // Verify ONLY if both secret and signature are present
+    if (secret && signature) {
+      const isValid = verifyWebhookSignature(body, signature, secret);
+      if (!isValid) {
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
     }
 
     const data = JSON.parse(body);
