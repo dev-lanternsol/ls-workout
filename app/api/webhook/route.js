@@ -50,14 +50,16 @@ export async function POST(request) {
     const msg = data?.payload?.data;
     if (!msg) return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
 
-    // Pull what we need from the real ClickUp payload
-    const message_id = String(msg.id);
-    const user_id = String(msg.userid);
-    const text_content = msg.text_content || '';
-    const message = extractMessage(text_content);
+  // Pull what we need from the real ClickUp payload
+  const message_id = String(msg.id);
+  const user_id = String(msg.userid);
+  const text_content = msg.text_content || '';
+  const message = extractMessage(text_content);
+  // Try to get team_id from payload, fallback to env if needed
+  const team_id = data?.payload?.team_id || process.env.CLICKUP_TEAM_ID;
 
-    // First image in the comment blocks, if any
-    const imageUrl = msg.comment?.find(c => c.type === 'image')?.image?.url;
+  // First image in the comment blocks, if any
+  const imageUrl = msg.comment?.find(c => c.type === 'image')?.image?.url;
 
     // Upsert a raw log row (optional but super useful)
     const supa = getSupabaseAdmin();
@@ -74,18 +76,21 @@ export async function POST(request) {
     // Download image and convert to base64 (server-side)
     const imageBase64 = await downloadImage(imageUrl);
 
-    // (Optional) if you want to resolve the user’s name
+    // Get user name from ClickUp API
     let userName = `user-${user_id}`;
     try {
-      const user = await getClickUpUser(user_id);
-      if (user?.username) userName = user.username;
+      if (team_id && user_id) {
+        const user = await getClickUpUser(team_id, user_id);
+        if (user?.username) userName = user.username;
+      }
     } catch (_) {}
 
     // Analyze with Gemini
     const workoutData = await analyzeWorkoutImage(imageBase64, message);
 
-    // Save to Supabase
+    // Save to Supabase (store both user_id and user_name)
     const { error } = await supa.from('workouts').insert({
+      user_id,
       user_name: userName,
       activity_type: workoutData.activity_type,
       date: workoutData.date || new Date().toISOString().split('T')[0],

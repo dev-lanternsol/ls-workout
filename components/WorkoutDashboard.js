@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Activity, Calendar, User, TrendingUp, Clock, Heart, Flame } from 'lucide-react';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 
@@ -27,6 +28,24 @@ const WorkoutCard = ({ workout }) => {
   const formatTime = (dateStr) => {
     const date = new Date(dateStr);
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Helper to replace unicode like "1f525" with emoji
+  const renderWithEmojis = (text) => {
+    if (!text) return '';
+    // Replace all occurrences of unicode codepoints like "1f525" or "1F525"
+    return text.replace(/([0-9a-fA-F]{4,6})/g, (match) => {
+      try {
+        const codePoint = parseInt(match, 16);
+        // Only replace if it's a valid emoji codepoint
+        if (codePoint >= 0x1F300 && codePoint <= 0x1FAFF) {
+          return String.fromCodePoint(codePoint);
+        }
+        return match;
+      } catch {
+        return match;
+      }
+    });
   };
 
   return (
@@ -69,7 +88,9 @@ const WorkoutCard = ({ workout }) => {
 
       {workout.raw_message && (
         <div className="mt-4 pt-4 border-t border-gray-100">
-          <p className="text-sm text-gray-500 italic">"{workout.raw_message}"</p>
+          <p className="text-sm text-gray-500 italic">
+            "{renderWithEmojis(workout.raw_message)}"
+          </p>
         </div>
       )}
     </div>
@@ -86,50 +107,70 @@ export default function WorkoutDashboard() {
     activeUsers: 0,
     avgDuration: 0
   });
+  const [userDaily, setUserDaily] = useState([]);
+  const [userTotals, setUserTotals] = useState([]);
+  const [topCalories, setTopCalories] = useState([]);
 
   // Simulated Supabase data fetching
   useEffect(() => {
-    const fetchWorkouts = async () => {
+    const fetchAll = async () => {
       try {
-        // In production, replace with actual Supabase query:
-        // const { data, error } = await supabase
-        //   .from('workouts')
-        //   .select('*')
-        //   .order('created_at', { ascending: false })
-        //   .limit(20);
-        const { data, error } = await supabase
+        // Recent workouts
+        const { data: workoutsData } = await supabase
           .from('workouts')
-          .select(`*`).order('created_at', { ascending: false })
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setWorkouts(data);
-        
-        // Calculate stats
-        const totalCalories = data.reduce((sum, w) => sum + w.calories_burned, 0);
-        const avgDuration = Math.round(data.reduce((sum, w) => sum + w.duration_minutes, 0) / data.length);
-        const uniqueUsers = new Set(data.map(w => w.user_name)).size;
-        
+          .select(`*`).order('created_at', { ascending: false }).limit(20);
+        setWorkouts(workoutsData);
+
+        // Per-user, per-day aggregation (last 30 days)
+        const { data: userDailyData } = await supabase
+          .from('v_workouts_user_daily')
+          .select('*')
+          .gte('day', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+          .order('day', { ascending: true })
+          .order('user_name', { ascending: true });
+        setUserDaily(userDailyData || []);
+
+        // Totals per user (lifetime)
+        const { data: userTotalsData } = await supabase
+          .from('v_workouts_user_totals')
+          .select('*')
+          .order('workouts', { ascending: false })
+          .limit(10);
+        setUserTotals(userTotalsData || []);
+
+        // Top by calories in last 30 days
+        const { data: topCaloriesData } = await supabase
+          .from('workouts')
+          .select('user_name, calories_burned, date')
+          .gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+        // Aggregate calories by user
+        const caloriesMap = {};
+        (topCaloriesData || []).forEach(row => {
+          if (!caloriesMap[row.user_name]) caloriesMap[row.user_name] = { user_name: row.user_name, workouts: 0, total_calories: 0 };
+          caloriesMap[row.user_name].workouts += 1;
+          caloriesMap[row.user_name].total_calories += row.calories_burned || 0;
+        });
+        const caloriesArr = Object.values(caloriesMap).sort((a, b) => b.total_calories - a.total_calories).slice(0, 10);
+        setTopCalories(caloriesArr);
+
+        // Stats
+        const totalCalories = (workoutsData || []).reduce((sum, w) => sum + (w.calories_burned || 0), 0);
+        const avgDuration = Math.round((workoutsData || []).reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / (workoutsData?.length || 1));
+        const uniqueUsers = new Set((workoutsData || []).map(w => w.user_name)).size;
         setStats({
-          totalWorkouts: data.length,
+          totalWorkouts: workoutsData?.length || 0,
           totalCalories,
           activeUsers: uniqueUsers,
           avgDuration
         });
-        
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching workouts:', error);
+        console.error('Error fetching dashboard data:', error);
         setLoading(false);
       }
     };
-
-    fetchWorkouts();
-    
-    // Set up polling for real-time updates
-    const interval = setInterval(fetchWorkouts, 30000); // Refresh every 30 seconds
-    
+    fetchAll();
+    const interval = setInterval(fetchAll, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -190,6 +231,93 @@ export default function WorkoutDashboard() {
             value={`${stats.avgDuration} min`}
             color="#8B5CF6"
           />
+        </div>
+
+        {/* Per-user, per-day aggregation */}
+        <div className="mb-8 bg-white rounded-xl shadow p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Each Team Member Workouts (Last 30 Days)</h2>
+          <div className="overflow-x-auto rounded-lg">
+            <table className="min-w-full text-sm border-separate border-spacing-y-1">
+              <thead className="bg-gray-100 sticky top-0 z-10">
+                <tr>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">User</th>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Day</th>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Workouts</th>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Calories</th>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Duration (min)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {userDaily.map((row, i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-gray-50 hover:bg-blue-50' : 'bg-white hover:bg-blue-50'}>
+                    <td className="px-3 py-2 font-medium">
+                      <Link href={`/dashboard/user/${encodeURIComponent(row.user_name)}`} className="text-blue-600 hover:underline font-semibold">{row.user_name}</Link>
+                    </td>
+                    <td className="px-3 py-2">{row.day}</td>
+                    <td className="px-3 py-2 text-blue-700 font-semibold">{row.workouts}</td>
+                    <td className="px-3 py-2">{row.total_calories}</td>
+                    <td className="px-3 py-2">{row.total_duration_minutes}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Top by calories in last 30 days */}
+        <div className="mb-8 bg-white rounded-xl shadow p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Top Users by Calories (Last 30 Days)</h2>
+          <div className="overflow-x-auto rounded-lg">
+            <table className="min-w-full text-sm border-separate border-spacing-y-1">
+              <thead className="bg-gray-100 sticky top-0 z-10">
+                <tr>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">User</th>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Workouts</th>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Total Calories</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topCalories.map((row, i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-gray-50 hover:bg-blue-50' : 'bg-white hover:bg-blue-50'}>
+                    <td className="px-3 py-2 font-medium">
+                      <Link href={`/dashboard/user/${encodeURIComponent(row.user_name)}`} className="text-blue-600 hover:underline font-semibold">{row.user_name}</Link>
+                    </td>
+                    <td className="px-3 py-2 text-blue-700 font-semibold">{row.workouts}</td>
+                    <td className="px-3 py-2">{row.total_calories}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Totals per user (lifetime) */}
+        <div className="mb-8 bg-white rounded-xl shadow p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Top Users by Workouts (Lifetime)</h2>
+          <div className="overflow-x-auto rounded-lg">
+            <table className="min-w-full text-sm border-separate border-spacing-y-1">
+              <thead className="bg-gray-100 sticky top-0 z-10">
+                <tr>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">User</th>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Workouts</th>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Calories</th>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Duration (min)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {userTotals.map((row, i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-gray-50 hover:bg-blue-50' : 'bg-white hover:bg-blue-50'}>
+                    <td className="px-3 py-2 font-medium">
+                      <Link href={`/dashboard/user/${encodeURIComponent(row.user_name)}`} className="text-blue-600 hover:underline font-semibold">{row.user_name}</Link>
+                    </td>
+                    <td className="px-3 py-2 text-blue-700 font-semibold">{row.workouts}</td>
+                    <td className="px-3 py-2">{row.total_calories}</td>
+                    <td className="px-3 py-2">{row.total_duration_minutes}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Recent Workouts */}
