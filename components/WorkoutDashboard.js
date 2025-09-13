@@ -117,7 +117,7 @@ export default function WorkoutDashboard() {
       try {
         // Recent workouts
         const { data: workoutsData } = await supabase
-          .from('workouts')
+          .from('workouts_with_user')
           .select(`*`).order('created_at', { ascending: false }).limit(20);
         setWorkouts(workoutsData);
 
