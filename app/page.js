@@ -1,103 +1,260 @@
-import Image from "next/image";
+// app/page.js - Replace your existing page.js with this
+'use client'
 
-export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+import React, { useState, useEffect } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Activity, Calendar, Users, TrendingUp, Clock, Zap } from 'lucide-react';
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+// Mock data for development - replace with Supabase data
+const mockWorkouts = [
+  {
+    id: 1,
+    date: '2024-09-13',
+    individual: 'John Doe',
+    workout_type: 'Basketball',
+    duration: 45,
+    calories: 320,
+    heart_rate: 145,
+    steps: 3200,
+    created_at: '2024-09-13T10:30:00Z'
+  },
+  {
+    id: 2,
+    date: '2024-09-13',
+    individual: 'Jane Smith',
+    workout_type: 'Running',
+    duration: 30,
+    calories: 280,
+    heart_rate: 155,
+    steps: 4500,
+    created_at: '2024-09-13T09:15:00Z'
+  },
+  {
+    id: 3,
+    date: '2024-09-12',
+    individual: 'Mike Johnson',
+    workout_type: 'Cycling',
+    duration: 60,
+    calories: 450,
+    heart_rate: 138,
+    steps: 1200,
+    created_at: '2024-09-12T18:20:00Z'
+  }
+];
+
+// Stats cards component
+const StatsCard = ({ title, value, icon: Icon, color }) => (
+  <div className="bg-white rounded-lg shadow-md p-6 border-l-4" style={{ borderLeftColor: color }}>
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-medium text-gray-600">{title}</p>
+        <p className="text-2xl font-bold text-gray-900">{value}</p>
+      </div>
+      <Icon className="h-8 w-8" style={{ color }} />
+    </div>
+  </div>
+);
+
+// Workout list component
+const WorkoutList = ({ workouts }) => (
+  <div className="bg-white rounded-lg shadow-md">
+    <div className="px-6 py-4 border-b border-gray-200">
+      <h3 className="text-lg font-medium text-gray-900">Recent Workouts</h3>
+    </div>
+    <div className="divide-y divide-gray-200">
+      {workouts.map((workout) => (
+        <div key={workout.id} className="px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex-shrink-0">
+              <Activity className="h-6 w-6 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-900">{workout.individual}</p>
+              <p className="text-sm text-gray-500">{workout.workout_type}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-medium text-gray-900">{workout.duration} min</p>
+            <p className="text-sm text-gray-500">{workout.calories} cal</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-gray-400">
+              {new Date(workout.date).toLocaleDateString()}
+            </p>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+      ))}
+    </div>
+  </div>
+);
+
+// Main Dashboard Component
+export default function WorkoutDashboard() {
+  const [workouts, setWorkouts] = useState(mockWorkouts);
+  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState({
+    totalWorkouts: 0,
+    totalCalories: 0,
+    averageDuration: 0,
+    activeMembers: 0
+  });
+
+  // Calculate stats from workouts
+  useEffect(() => {
+    const totalWorkouts = workouts.length;
+    const totalCalories = workouts.reduce((sum, w) => sum + w.calories, 0);
+    const averageDuration = workouts.reduce((sum, w) => sum + w.duration, 0) / workouts.length;
+    const activeMembers = new Set(workouts.map(w => w.individual)).size;
+
+    setStats({
+      totalWorkouts,
+      totalCalories,
+      averageDuration: Math.round(averageDuration),
+      activeMembers
+    });
+  }, [workouts]);
+
+  // Chart data for weekly activity
+  const chartData = workouts.reduce((acc, workout) => {
+    const date = workout.date;
+    const existing = acc.find(item => item.date === date);
+    
+    if (existing) {
+      existing.workouts += 1;
+      existing.calories += workout.calories;
+    } else {
+      acc.push({
+        date,
+        workouts: 1,
+        calories: workout.calories
+      });
+    }
+    
+    return acc;
+  }, []).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // Function to fetch workouts from API
+  const fetchWorkouts = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/workouts');
+      if (response.ok) {
+        const data = await response.json();
+        setWorkouts(data);
+      }
+    } catch (error) {
+      console.error('Error fetching workouts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to simulate workout submission (for testing)
+  const simulateWorkoutSubmission = async () => {
+    const mockMessage = {
+      text: "Had a great basketball session today! 🏀",
+      user: "Alex Wilson",
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      const response = await fetch('/api/webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(mockMessage)
+      });
+      
+      if (response.ok) {
+        // Refresh workouts after successful submission
+        fetchWorkouts();
+      }
+    } catch (error) {
+      console.error('Error processing workout:', error);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Team Workout Dashboard</h1>
+          <p className="text-gray-600 mt-2">Track and analyze team fitness activities</p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatsCard
+            title="Total Workouts"
+            value={stats.totalWorkouts}
+            icon={Activity}
+            color="#3B82F6"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+          <StatsCard
+            title="Total Calories"
+            value={stats.totalCalories.toLocaleString()}
+            icon={Zap}
+            color="#EF4444"
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
+          <StatsCard
+            title="Avg Duration"
+            value={`${stats.averageDuration} min`}
+            icon={Clock}
+            color="#10B981"
           />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <StatsCard
+            title="Active Members"
+            value={stats.activeMembers}
+            icon={Users}
+            color="#F59E0B"
+          />
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Daily Activity</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="workouts" fill="#3B82F6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Calories Burned</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="calories" stroke="#EF4444" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Workout List */}
+        <WorkoutList workouts={workouts} />
+
+        {/* Test Button (for development) */}
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={simulateWorkoutSubmission}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
+            disabled={loading}
+          >
+            {loading ? 'Processing...' : 'Simulate Workout Submission'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
