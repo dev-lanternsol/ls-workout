@@ -15,10 +15,12 @@ function verifyWebhookSignature(body, signature, secret) {
   return hash === signature;
 }
 
-// tiny helper: get last non-empty line from text_content
+// Helper: remove all "image.png" and newlines from text_content
 function extractMessage(textContent = '') {
-  const lines = textContent.split('\n').map(l => l.trim()).filter(Boolean);
-  return lines[lines.length - 1] || '';
+  return textContent
+    .replace(/image\.png/gi, '')
+    .replace(/\n/g, '')
+    .trim();
 }
 
 async function storeLogs(request, body) {

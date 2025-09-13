@@ -1,45 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Calendar, User, TrendingUp, Clock, Heart, Flame } from 'lucide-react';
+import { getSupabaseBrowser } from '@/lib/supabase/client';
 
-// Mock data for demonstration - replace with actual Supabase data
-const mockWorkouts = [
-  {
-    id: 1,
-    user_name: 'John Doe',
-    activity_type: 'Basketball',
-    date: '2024-01-15',
-    duration_minutes: 45,
-    calories_burned: 420,
-    heart_rate_avg: 145,
-    distance_km: 3.2,
-    raw_message: 'basketball today',
-    created_at: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 2,
-    user_name: 'Jane Smith',
-    activity_type: 'Running',
-    date: '2024-01-15',
-    duration_minutes: 30,
-    calories_burned: 350,
-    heart_rate_avg: 155,
-    distance_km: 5.5,
-    raw_message: 'morning run',
-    created_at: '2024-01-15T08:00:00Z'
-  },
-  {
-    id: 3,
-    user_name: 'Mike Johnson',
-    activity_type: 'Cycling',
-    date: '2024-01-14',
-    duration_minutes: 60,
-    calories_burned: 580,
-    heart_rate_avg: 135,
-    distance_km: 20.3,
-    raw_message: 'bike ride',
-    created_at: '2024-01-14T17:00:00Z'
-  }
-];
+const supabase = getSupabaseBrowser();
 
 // Stats Card Component
 const StatsCard = ({ icon: Icon, label, value, color }) => (
@@ -88,10 +51,12 @@ const WorkoutCard = ({ workout }) => {
           <Clock className="w-4 h-4 text-gray-400 mr-2" />
           <span className="text-sm text-gray-600">{workout.duration_minutes} min</span>
         </div>
-        <div className="flex items-center">
-          <Flame className="w-4 h-4 text-orange-400 mr-2" />
-          <span className="text-sm text-gray-600">{workout.calories_burned} cal</span>
-        </div>
+        {workout.calories_burned && (
+          <div className="flex items-center">
+            <Flame className="w-4 h-4 text-orange-400 mr-2" />
+            <span className="text-sm text-gray-600">{workout.calories_burned} cal</span>
+          </div>
+        )}
         <div className="flex items-center">
           <Heart className="w-4 h-4 text-red-400 mr-2" />
           <span className="text-sm text-gray-600">{workout.heart_rate_avg} bpm</span>
@@ -132,19 +97,22 @@ export default function WorkoutDashboard() {
         //   .select('*')
         //   .order('created_at', { ascending: false })
         //   .limit(20);
+        const { data, error } = await supabase
+          .from('workouts')
+          .select(`*`).order('created_at', { ascending: false })
         
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        setWorkouts(mockWorkouts);
+        setWorkouts(data);
         
         // Calculate stats
-        const totalCalories = mockWorkouts.reduce((sum, w) => sum + w.calories_burned, 0);
-        const avgDuration = Math.round(mockWorkouts.reduce((sum, w) => sum + w.duration_minutes, 0) / mockWorkouts.length);
-        const uniqueUsers = new Set(mockWorkouts.map(w => w.user_name)).size;
+        const totalCalories = data.reduce((sum, w) => sum + w.calories_burned, 0);
+        const avgDuration = Math.round(data.reduce((sum, w) => sum + w.duration_minutes, 0) / data.length);
+        const uniqueUsers = new Set(data.map(w => w.user_name)).size;
         
         setStats({
-          totalWorkouts: mockWorkouts.length,
+          totalWorkouts: data.length,
           totalCalories,
           activeUsers: uniqueUsers,
           avgDuration
