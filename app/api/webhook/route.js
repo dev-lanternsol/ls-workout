@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { analyzeWorkoutImage } from '@/lib/gemini';
 import { getClickUpUser, downloadImage } from '@/lib/clickup';
+import { storeLogs } from '@/lib/utils';
 import crypto from 'crypto';
 
 // Ensure Node runtime (Buffer/crypto) and no caching for webhooks
@@ -21,17 +22,6 @@ function extractMessage(textContent = '') {
     .replace(/image\.png/gi, '')
     .replace(/\n/g, '')
     .trim();
-}
-
-async function storeLogs(request, body) {
-  // inside POST() at the top, right after reading body/signature
-  const headersObj = Object.fromEntries([...request.headers.entries()]);
-  const supa = getSupabaseAdmin();
-  await supa.from('webhook_logs').insert({
-    headers: headersObj,
-    body,
-    valid_signature: !!(process.env.CLICKUP_WEBHOOK_SECRET && request.headers.get('x-signature')),
-  });
 }
 
 export async function POST(request) {
