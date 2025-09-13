@@ -45,8 +45,6 @@ export async function POST(request) {
   const user_id = String(msg.userid);
   const text_content = msg.text_content || '';
   const message = extractMessage(text_content);
-  // Try to get team_id from payload, fallback to env if needed
-  const team_id = data?.payload?.team_id || process.env.CLICKUP_TEAM_ID;
 
   // First image in the comment blocks, if any
   const imageUrl = msg.comment?.find(c => c.type === 'image')?.image?.url;
@@ -90,7 +88,6 @@ export async function POST(request) {
     // Save to Supabase (store both user_id and user_name)
     const { error } = await supa.from('workouts').insert({
       user_id,
-      user_name: userName,
       activity_type: workoutData.activity_type,
       date: workoutData.date || new Date().toISOString().split('T')[0],
       duration_minutes: workoutData.duration_minutes,
