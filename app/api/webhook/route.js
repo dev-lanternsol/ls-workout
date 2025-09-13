@@ -17,6 +17,16 @@ export async function POST(request) {
     const secret = process.env.CLICKUP_WEBHOOK_SECRET;
     const signature = request.headers.get('x-signature');
 
+    // inside POST() at the top, right after reading body/signature
+    const headersObj = Object.fromEntries([...request.headers.entries()]);
+    const supa = getSupabaseAdmin();
+    await supa.from('webhook_logs').insert({
+      headers: headersObj,
+      body,
+      valid_signature: !!(process.env.CLICKUP_WEBHOOK_SECRET && request.headers.get('x-signature')),
+    });
+
+
     // Verify ONLY if both secret and signature are present
     if (secret && signature) {
       const isValid = verifyWebhookSignature(body, signature, secret);
