@@ -1,19 +1,18 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+	async headers() {
+		return [
+			{
+				source: '/:path*',
+				headers: [
+					{
+						key: 'Content-Security-Policy',
+						value: "frame-ancestors 'self' https://clickup.com;"
+					}
+				],
+			},
+		];
+	},
+};
 
 export default nextConfig;
-export const headers = async () => [
-  {
-    source: '/(.*)',
-    headers: [
-      {
-        key: 'Content-Security-Policy',
-        value: "frame-ancestors 'self' https://app.clickup.com",
-      },
-      {
-        key: 'X-Frame-Options',
-        value: 'ALLOW-FROM https://app.clickup.com',
-      },
-    ],
-  },
-];
