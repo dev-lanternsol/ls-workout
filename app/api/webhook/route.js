@@ -66,14 +66,23 @@ export async function POST(request) {
     // Download image and convert to base64 (server-side)
     const imageBase64 = await downloadImage(imageUrl);
 
-    // Get user name from ClickUp API
-    let userName = `user-${user_id}`;
-    try {
-      if (team_id && user_id) {
-        const user = await getClickUpUser(team_id, user_id);
-        if (user?.username) userName = user.username;
-      }
-    } catch (_) {}
+    // try to read mapping
+    let userName = null;
+    const { data: mapRow } = await supa
+      .from('team_users')
+      .select('user_name')
+      .eq('user_id', user_id)
+      .maybeSingle();
+
+    if (mapRow?.user_name) {
+      userName = mapRow.user_name;
+    } else {
+      // create placeholder "user-<id>" so views show something
+      userName = `user-${user_id}`;
+      await supa
+        .from('team_users')
+        .upsert({ user_id: user_id, user_name: userName }, { onConflict: 'user_id' });
+    }
 
     // Analyze with Gemini
     const workoutData = await analyzeWorkoutImage(imageBase64, message);
