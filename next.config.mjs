@@ -7,7 +7,7 @@ const nextConfig = {
 				headers: [
 					{
 						key: 'Content-Security-Policy',
-						value: "frame-ancestors 'self' https://clickup.com;"
+						value: "frame-ancestors 'self' https://app.clickup.com;"
 					}
 				],
 			},
