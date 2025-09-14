@@ -1,4 +1,4 @@
-import { Clock, Flame, Heart, Route, User } from 'lucide-react';
+import { Clock, Flame, Heart, Route, User, AlertTriangle } from 'lucide-react';
 
 const WorkoutCard = ({ workout, avatarUrl }) => {
   const formatDate = (dateStr) => {
@@ -11,14 +11,11 @@ const WorkoutCard = ({ workout, avatarUrl }) => {
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Helper to replace unicode like "1f525" with emoji
   const renderWithEmojis = (text) => {
     if (!text) return '';
-    // Replace all occurrences of unicode codepoints like "1f525" or "1F525"
     return text.replace(/([0-9a-fA-F]{4,6})/g, (match) => {
       try {
         const codePoint = parseInt(match, 16);
-        // Only replace if it's a valid emoji codepoint
         if (codePoint >= 0x1F300 && codePoint <= 0x1FAFF) {
           return String.fromCodePoint(codePoint);
         }
@@ -29,8 +26,26 @@ const WorkoutCard = ({ workout, avatarUrl }) => {
     });
   };
 
+  // Check for missing data
+  const isMissingData =
+    !workout.duration_minutes ||
+    !workout.calories_burned ||
+    !workout.heart_rate_avg ||
+    !workout.distance_km;
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow relative">
+      {isMissingData && (
+        <div className="absolute bottom-5 right-4 flex items-center group" style={{ pointerEvents: 'auto' }}>
+          <div className="relative">
+            <AlertTriangle className="w-5 h-5 text-yellow-500" />
+            <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-yellow-100 text-yellow-900 text-xs rounded px-2 py-1 absolute right-8 bottom-0 z-10 shadow-lg whitespace-wrap w-48">
+              Warning: this workout data is incomplete, please double check that the input message contains enough information.
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center">
           {avatarUrl ? (
