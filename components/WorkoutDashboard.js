@@ -20,7 +20,7 @@ const StatsCard = ({ icon: Icon, label, value, color }) => (
 );
 
 // Workout Card Component
-const WorkoutCard = ({ workout }) => {
+const WorkoutCard = ({ workout, avatarUrl }) => {
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -53,9 +53,17 @@ const WorkoutCard = ({ workout }) => {
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-            <User className="w-5 h-5 text-blue-600" />
-          </div>
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={workout.user_name}
+              className="w-10 h-10 rounded-full object-cover border border-gray-200"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <User className="w-5 h-5 text-blue-600" />
+            </div>
+          )}
           <div className="ml-3">
             <h3 className="font-semibold text-gray-900">{workout.user_name}</h3>
             <p className="text-sm text-gray-500">{formatDate(workout.date)} at {formatTime(workout.created_at)}</p>
@@ -111,6 +119,7 @@ export default function WorkoutDashboard() {
   const [userDaily, setUserDaily] = useState([]);
   const [userTotals, setUserTotals] = useState([]);
   const [topCalories, setTopCalories] = useState([]);
+  const [userAvatars, setUserAvatars] = useState({});
 
   // Simulated Supabase data fetching
   useEffect(() => {
@@ -121,6 +130,17 @@ export default function WorkoutDashboard() {
           .from('workouts_with_user')
           .select(`*`).order('created_at', { ascending: false }).limit(20);
         setWorkouts(workoutsData);
+
+        // Fetch user avatars from team_users
+        const { data: teamUsers } = await supabase
+          .from('team_users')
+          .select('user_id, avatar_url');
+        const avatarMap = {};
+        (teamUsers || []).forEach(u => {
+          if (u.user_id && u.avatar_url) avatarMap[u.user_id] = u.avatar_url;
+        });
+        console.log('Avatar map:', avatarMap);
+        setUserAvatars(avatarMap);
 
         // Per-user, per-day aggregation (last 30 days)
         const { data: userDailyData } = await supabase
@@ -312,8 +332,12 @@ export default function WorkoutDashboard() {
         <div className="mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Workouts</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {workouts.map((workout) => (
-              <WorkoutCard key={workout.id} workout={workout} />
+            {workouts.map((workout, idx) => (
+              <WorkoutCard
+                key={`${'user-report'}-${workout.created_at || idx}`}
+                workout={workout}
+                avatarUrl={userAvatars[workout.user_id]}
+              />
             ))}
           </div>
         </div>
