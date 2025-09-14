@@ -1,4 +1,4 @@
-import UserDetails from '@/components/UserDetails';
+import UserDetails from '@/components/layout/UserDetails';
 
 export default function UserDetailsPage({ params }) {
   const { user_id } = params;

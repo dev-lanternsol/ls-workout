@@ -1,0 +1,87 @@
+import { Clock, Flame, Heart, Route, User } from 'lucide-react';
+
+const WorkoutCard = ({ workout, avatarUrl }) => {
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const formatTime = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Helper to replace unicode like "1f525" with emoji
+  const renderWithEmojis = (text) => {
+    if (!text) return '';
+    // Replace all occurrences of unicode codepoints like "1f525" or "1F525"
+    return text.replace(/([0-9a-fA-F]{4,6})/g, (match) => {
+      try {
+        const codePoint = parseInt(match, 16);
+        // Only replace if it's a valid emoji codepoint
+        if (codePoint >= 0x1F300 && codePoint <= 0x1FAFF) {
+          return String.fromCodePoint(codePoint);
+        }
+        return match;
+      } catch {
+        return match;
+      }
+    });
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={workout.user_name}
+              className="w-10 h-10 rounded-full object-cover border border-gray-200"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <User className="w-5 h-5 text-blue-600" />
+            </div>
+          )}
+          <div className="ml-3">
+            <h3 className="font-semibold text-gray-900">{workout.user_name}</h3>
+            <p className="text-sm text-gray-500">{formatDate(workout.date)} at {formatTime(workout.created_at)}</p>
+          </div>
+        </div>
+        <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+          {workout.activity_type}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mt-4">
+        <div className="flex items-center">
+          <Clock className="w-4 h-4 text-gray-400 mr-2" />
+          <span className="text-sm text-gray-600">{workout.duration_minutes || '--'} min</span>
+        </div>
+        <div className="flex items-center">
+          <Flame className="w-4 h-4 text-orange-400 mr-2" />
+          <span className="text-sm text-gray-600">{workout.calories_burned || '--'} cal</span>
+        </div>
+        <div className="flex items-center">
+          <Heart className="w-4 h-4 text-red-400 mr-2" />
+          <span className="text-sm text-gray-600">{workout.heart_rate_avg || '--'} bpm</span>
+        </div>
+        <div className="flex items-center">
+          <Route className="w-4 h-4 text-blue-400 mr-2" />
+          <span className="text-sm text-gray-600">{workout.distance_km || '--'} km</span>
+        </div>
+      </div>
+
+      {workout.raw_message && (
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <p className="text-sm text-gray-500 italic">
+            "{renderWithEmojis(workout.raw_message)}"
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default WorkoutCard;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
-import WorkoutDashboard from '@/components/WorkoutDashboard';
+import WorkoutDashboard from '@/components/layout/WorkoutDashboard';
 
 export default function DashboardPage() {
   const supabase = getSupabaseBrowser();
