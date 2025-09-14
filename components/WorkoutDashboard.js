@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Activity, Calendar, User, TrendingUp, Clock, Heart, Flame, Users, Zap } from 'lucide-react';
+import { Activity, Calendar, User, Users, Clock, Heart, Flame, Route } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 
@@ -89,10 +89,12 @@ const WorkoutCard = ({ workout, avatarUrl }) => {
           <Heart className="w-4 h-4 text-red-400 mr-2" />
           <span className="text-sm text-gray-600">{workout.heart_rate_avg} bpm</span>
         </div>
-        <div className="flex items-center">
-          <TrendingUp className="w-4 h-4 text-blue-400 mr-2" />
-          <span className="text-sm text-gray-600">{workout.distance_km} km</span>
-        </div>
+        {workout.distance_km && (
+          <div className="flex items-center">
+            <Route className="w-4 h-4 text-blue-400 mr-2" />
+            <span className="text-sm text-gray-600">{workout.distance_km} km</span>
+          </div>
+        )}
       </div>
 
       {workout.raw_message && (
@@ -156,7 +158,7 @@ export default function WorkoutDashboard() {
           .from('v_workouts_user_totals')
           .select('*')
           .order('workouts', { ascending: false })
-          .limit(10);
+          .limit(20);
         setUserTotals(userTotalsData || []);
 
         // Top by calories in last 30 days
@@ -247,25 +249,25 @@ export default function WorkoutDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
             icon={Activity}
-            label="Total Workouts"
+            label="Total Workout Sessions"
             value={stats.totalWorkouts}
             color="#3B82F6"
           />
           <StatsCard
             icon={Flame}
-            label="Total Calories"
+            label="Total Calories Burned"
             value={stats.totalCalories.toLocaleString()}
             color="#F97316"
           />
           <StatsCard
-            icon={User}
-            label="Active Users"
+            icon={Users}
+            label="Active Team Members"
             value={stats.activeUsers}
             color="#10B981"
           />
           <StatsCard
             icon={Clock}
-            label="Avg Duration"
+            label="Avg Duration of Each Session"
             value={`${stats.avgDuration} min`}
             color="#8B5CF6"
           />
@@ -316,7 +318,7 @@ export default function WorkoutDashboard() {
                 {userTotals.map((row, i) => (
                   <tr key={i} className={i % 2 === 0 ? 'bg-gray-50 hover:bg-blue-50' : 'bg-white hover:bg-blue-50'}>
                     <td className="px-3 py-2 font-medium">
-                      <Link href={`/dashboard/user/${encodeURIComponent(row.user_name)}`} className="text-blue-600 hover:underline font-semibold">{row.user_name}</Link>
+                      <Link href={`/dashboard/user/${encodeURIComponent(row.user_id)}`} className="text-blue-600 hover:underline font-semibold">{row.user_name}</Link>
                     </td>
                     <td className="px-3 py-2 text-blue-700 font-semibold">{row.workouts}</td>
                     <td className="px-3 py-2">{row.total_calories}</td>
