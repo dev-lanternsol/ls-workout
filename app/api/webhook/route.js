@@ -16,10 +16,16 @@ function verifyWebhookSignature(body, signature, secret) {
   return hash === signature;
 }
 
-// Helper: remove all "image.png" and newlines from text_content
+// Helper: remove all image markdown/HTML and newlines from text_content
 function extractMessage(textContent = '') {
   return textContent
-    .replace(/image\.png/gi, '')
+    // Remove Markdown images: ![alt](url)
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    // Remove HTML <img ...> tags
+    .replace(/<img[^>]*>/gi, '')
+    // Remove any standalone image file names (e.g., .png, .jpg, .jpeg, .gif, .webp, .svg)
+    .replace(/\b\S+\.(png|jpe?g|gif|webp|svg)\b/gi, '')
+    // Remove newlines
     .replace(/\n/g, '')
     .trim();
 }
