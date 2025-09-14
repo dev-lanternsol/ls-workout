@@ -310,8 +310,8 @@ export default function WorkoutDashboard() {
                 <tr>
                   <th className="px-3 py-2 font-semibold text-gray-700 text-left">User</th>
                   <th className="px-3 py-2 font-semibold text-gray-700 text-left">Workouts</th>
-                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Calories</th>
-                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Duration (min)</th>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Total Calories Burned</th>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Total Duration (min)</th>
                 </tr>
               </thead>
               <tbody>
