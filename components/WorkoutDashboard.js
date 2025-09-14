@@ -77,24 +77,20 @@ const WorkoutCard = ({ workout, avatarUrl }) => {
       <div className="grid grid-cols-2 gap-4 mt-4">
         <div className="flex items-center">
           <Clock className="w-4 h-4 text-gray-400 mr-2" />
-          <span className="text-sm text-gray-600">{workout.duration_minutes} min</span>
+          <span className="text-sm text-gray-600">{workout.duration_minutes || '--'} min</span>
         </div>
-        {workout.calories_burned && (
-          <div className="flex items-center">
-            <Flame className="w-4 h-4 text-orange-400 mr-2" />
-            <span className="text-sm text-gray-600">{workout.calories_burned} cal</span>
-          </div>
-        )}
+        <div className="flex items-center">
+          <Flame className="w-4 h-4 text-orange-400 mr-2" />
+          <span className="text-sm text-gray-600">{workout.calories_burned || '--'} cal</span>
+        </div>
         <div className="flex items-center">
           <Heart className="w-4 h-4 text-red-400 mr-2" />
-          <span className="text-sm text-gray-600">{workout.heart_rate_avg} bpm</span>
+          <span className="text-sm text-gray-600">{workout.heart_rate_avg || '--'} bpm</span>
         </div>
-        {workout.distance_km && (
-          <div className="flex items-center">
-            <Route className="w-4 h-4 text-blue-400 mr-2" />
-            <span className="text-sm text-gray-600">{workout.distance_km} km</span>
-          </div>
-        )}
+        <div className="flex items-center">
+          <Route className="w-4 h-4 text-blue-400 mr-2" />
+          <span className="text-sm text-gray-600">{workout.distance_km || '--'} km</span>
+        </div>
       </div>
 
       {workout.raw_message && (

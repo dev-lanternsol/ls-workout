@@ -95,7 +95,7 @@ export async function POST(request) {
     const { error } = await supa.from('workouts').insert({
       user_id,
       activity_type: workoutData.activity_type,
-      date: workoutData.date || new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split('T')[0],
       duration_minutes: workoutData.duration_minutes,
       calories_burned: workoutData.calories_burned,
       heart_rate_avg: workoutData.heart_rate_avg,
