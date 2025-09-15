@@ -60,7 +60,12 @@ const WorkoutCard = ({ workout, avatarUrl }) => {
             </div>
           )}
           <div className="ml-3">
-            <h3 className="font-semibold text-gray-900">{workout.user_name}</h3>
+            {/* link to the user's profile if available */}
+            {workout.user_id ? (
+              <a href={`/profile/${workout.user_id}`} className="font-semibold text-gray-900"><h3>{workout.user_name}</h3></a>
+            ) : (
+              <h3 className="font-semibold text-gray-900">{workout.user_name}</h3>
+            )}
             <p className="text-sm text-gray-500">{formatDate(workout.date)} at {formatTime(workout.created_at)}</p>
           </div>
         </div>
