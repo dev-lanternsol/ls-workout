@@ -1,4 +1,4 @@
-const WORKOUT_GOAL = 11;
+const WORKOUT_GOAL = 12;
 
 const AvatarWithProgressBar = ({ imageUrl, progress }) => {
   return (
