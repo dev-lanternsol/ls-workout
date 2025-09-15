@@ -144,8 +144,8 @@ export default function WorkoutDashboard() {
                 <tr>
                   <th className="px-3 py-2 font-semibold text-gray-700 text-left">User</th>
                   <th className="px-3 py-2 font-semibold text-gray-700 text-left">Workouts</th>
-                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Total Calories Burned</th>
                   <th className="px-3 py-2 font-semibold text-gray-700 text-left">Total Duration (min)</th>
+                  <th className="px-3 py-2 font-semibold text-gray-700 text-left">Total Calories Burned</th>
                 </tr>
               </thead>
               <tbody>
@@ -154,9 +154,9 @@ export default function WorkoutDashboard() {
                     <td className="px-3 py-2 font-medium">
                       <Link href={`/dashboard/user/${encodeURIComponent(row.user_id)}`} className="text-blue-600 hover:underline font-semibold">{row.user_name}</Link>
                     </td>
-                    <td className="px-3 py-2 text-blue-700 font-semibold">{row.workouts}</td>
-                    <td className="px-3 py-2">{row.total_calories}</td>
+                    <td className="px-3 py-2 font-semibold">{row.workouts}</td>
                     <td className="px-3 py-2">{row.total_duration_minutes}</td>
+                    <td className="px-3 py-2">{row.total_calories}</td>
                   </tr>
                 ))}
               </tbody>
