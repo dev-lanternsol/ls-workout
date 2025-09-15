@@ -1,4 +1,5 @@
 import { Clock, Flame, Heart, Route, User, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
 
 const WorkoutCard = ({ workout, avatarUrl }) => {
   const formatDate = (dateStr) => {
@@ -62,7 +63,9 @@ const WorkoutCard = ({ workout, avatarUrl }) => {
           <div className="ml-3">
             {/* link to the user's profile if available */}
             {workout.user_id ? (
-              <a href={`/profile/${workout.user_id}`} className="font-semibold text-gray-900"><h3>{workout.user_name}</h3></a>
+              <Link href={`/dashboard/user/${encodeURIComponent(workout.user_id)}`} className="font-semibold text-gray-900">
+                <h3>{workout.user_name}</h3>
+              </Link>
             ) : (
               <h3 className="font-semibold text-gray-900">{workout.user_name}</h3>
             )}
