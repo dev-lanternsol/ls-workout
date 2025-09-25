@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getSupabaseBrowser } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import WorkoutDashboard from '@/components/layout/WorkoutDashboard';
 
 export default function DashboardPage() {
-  const supabase = getSupabaseBrowser();
+  const supabase = createClient();
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
 

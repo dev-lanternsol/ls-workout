@@ -1,8 +1,13 @@
 import { Activity, Calendar, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import LogOut from '../layout/LogOutForm';
+import { createClient } from '@/lib/supabase/server';
 
-const Header = ({ backToHome = false }) => {
-  return (  
+const Header = async ({ backToHome = false }) => {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  return (
     <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
@@ -17,8 +22,12 @@ const Header = ({ backToHome = false }) => {
               <h1 className="text-2xl font-bold text-gray-900">Team Workout Dashboard</h1>
             </div>
             <div className="flex items-center text-sm text-gray-500">
-              <Calendar className="w-4 h-4 mr-1" />
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {user && (
+                <div className="flex items-center space-x-4">
+                  <span className="ml-4 text-gray-700">Hello, {user.user_metadata.username || user.email}</span>
+                  <LogOut />
+                </div>
+              )}
             </div>
           </div>
         </div>  

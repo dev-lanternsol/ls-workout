@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { getSupabaseBrowser } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import WorkoutCard from '../ui/WorkoutCard';
-import Footer from '../ui/Footer';
-import Header from '../ui/Header';
 import StatsGrid from '../ui/StatsGrid';
 
-const supabase = getSupabaseBrowser();
+const supabase = createClient();
 
 // Main Dashboard Component
 export default function WorkoutDashboard() {
@@ -23,7 +21,6 @@ export default function WorkoutDashboard() {
   const [userTotals, setUserTotals] = useState([]);
   const [userAvatars, setUserAvatars] = useState({});
 
-  // Simulated Supabase data fetching
   useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -32,6 +29,8 @@ export default function WorkoutDashboard() {
           .from('workouts_with_user')
           .select(`*`).order('created_at', { ascending: false }).limit(20);
         setWorkouts(workoutsData);
+
+        console.log('Fetched workouts:', workoutsData);
 
         // Fetch user avatars from team_users
         const { data: teamUsers } = await supabase
@@ -68,7 +67,9 @@ export default function WorkoutDashboard() {
         setLoading(false);
       }
     };
+    console.log('Fetching all dashboard data');
     fetchAll();
+    // Refresh data every 30 seconds
     const interval = setInterval(fetchAll, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -103,7 +104,6 @@ export default function WorkoutDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <StatsGrid stats={stats} />
 
@@ -187,8 +187,6 @@ export default function WorkoutDashboard() {
           </div>
         )}
       </div>
-
-      <Footer />
     </div>
   );
 }

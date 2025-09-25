@@ -1,9 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getSupabaseBrowser } from "@/lib/supabase/client";
-import Header from "../ui/Header";
+import { createClient } from "@/lib/supabase/client";
 import AvatarWithProgressBar from "../ui/AvatarWithProgressBar";
-import Footer from "../ui/Footer";
 
 // Helper to replace unicode like "1f525" with emoji
 const renderWithEmojis = (text) => {
@@ -34,7 +32,7 @@ export default function UserDetails({ user_id }) {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const supa = getSupabaseBrowser();
+      const supa = createClient();
       // Activity history (last 30 days)
       let { data: activityData } = await supa
         .from("workouts")
@@ -97,9 +95,6 @@ export default function UserDetails({ user_id }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <Header backToHome={true} />
-
       <div className="max-w-4xl mx-auto py-8 px-2">
         <div className="flex flex-col items-center mb-4 relative">
           {/* Avatar with progress border and badge */}
@@ -227,7 +222,6 @@ export default function UserDetails({ user_id }) {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }
