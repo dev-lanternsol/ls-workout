@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { isAdmin, reprocessWorkout } from "@/lib/admin-utils";
 import Header from "../ui/Header";
 import AvatarWithProgressBar from "../ui/AvatarWithProgressBar";
 import Footer from "../ui/Footer";
@@ -30,6 +31,8 @@ export default function UserDetails({ user_id }) {
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [monthlyCount, setMonthlyCount] = useState(0);
+  const [adminMode, setAdminMode] = useState(false);
+  const [reprocessing, setReprocessing] = useState({}); // Track reprocessing status per workout
 
   useEffect(() => {
     async function fetchData() {
@@ -39,7 +42,7 @@ export default function UserDetails({ user_id }) {
       let { data: activityData } = await supa
         .from("workouts")
         .select(
-          "date, activity_type, calories_burned, duration_minutes, raw_message"
+          "id, date, activity_type, calories_burned, duration_minutes, raw_message"
         )
         .eq("user_id", user_id)
         .gte(
@@ -92,6 +95,35 @@ export default function UserDetails({ user_id }) {
     fetchData();
   }, [user_id]);
 
+  // Check admin mode on component mount
+  useEffect(() => {
+    setAdminMode(isAdmin());
+  }, []);
+
+  // Handle reprocessing individual workouts
+  const handleReprocess = async (workoutId) => {
+    setReprocessing(prev => ({ ...prev, [workoutId]: 'loading' }));
+    
+    try {
+      const result = await reprocessWorkout(workoutId);
+      
+      if (result.success) {
+        setReprocessing(prev => ({ ...prev, [workoutId]: 'success' }));
+        console.log('Reprocess succeeded:', result.data);
+        // Clear success status after 3 seconds
+        setTimeout(() => {
+          setReprocessing(prev => ({ ...prev, [workoutId]: null }));
+        }, 3000);
+      } else {
+        setReprocessing(prev => ({ ...prev, [workoutId]: 'error' }));
+        console.error('Reprocess failed:', result.data || result.error);
+      }
+    } catch (error) {
+      setReprocessing(prev => ({ ...prev, [workoutId]: 'error' }));
+      console.error('Reprocess error:', error);
+    }
+  };
+
   if (loading)
     return <div className="py-12 text-center text-gray-500">Loading...</div>;
 
@@ -99,6 +131,15 @@ export default function UserDetails({ user_id }) {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <Header backToHome={true} />
+      
+      {/* Admin Mode Indicator */}
+      {adminMode && (
+        <div className="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4">
+          <div className="max-w-4xl mx-auto">
+            <p className="font-medium">🔧 Admin Mode Active - Reprocess buttons are visible</p>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-4xl mx-auto py-8 px-2">
         <div className="flex flex-col items-center mb-4 relative">
@@ -139,12 +180,17 @@ export default function UserDetails({ user_id }) {
                   <th className="px-3 py-2 font-semibold text-gray-700 text-left">
                     Note
                   </th>
+                  {adminMode && (
+                    <th className="px-3 py-2 font-semibold text-gray-700 text-left">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {activity.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center text-gray-400 py-6">
+                    <td colSpan={adminMode ? 6 : 5} className="text-center text-gray-400 py-6">
                       No activity data found.
                     </td>
                   </tr>
@@ -159,12 +205,34 @@ export default function UserDetails({ user_id }) {
                       }
                     >
                       <td className="px-3 py-2">{row.date}</td>
-                      <td className="px-3 py-2">{row.activity_type}</td>
+                      <td className="px-3 py-2 uppercase">{row.activity_type}</td>
                       <td className="px-3 py-2">{row.calories_burned}</td>
                       <td className="px-3 py-2">{row.duration_minutes}</td>
                       <td className="px-3 py-2">
                         {renderWithEmojis(row.raw_message)}
                       </td>
+                      {adminMode && (
+                        <td className="px-3 py-2">
+                          <button
+                            onClick={() => handleReprocess(row.id)}
+                            disabled={reprocessing[row.id] === 'loading'}
+                            className={`px-2 py-1 text-xs rounded font-medium transition-colors ${
+                              reprocessing[row.id] === 'loading'
+                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                : reprocessing[row.id] === 'success'
+                                ? 'bg-green-100 text-green-700'
+                                : reprocessing[row.id] === 'error'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                            }`}
+                          >
+                            {reprocessing[row.id] === 'loading' && '⏳'}
+                            {reprocessing[row.id] === 'success' && '✓'}
+                            {reprocessing[row.id] === 'error' && '✗'}
+                            {!reprocessing[row.id] && '🔄'} Reprocess
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))
                 )}

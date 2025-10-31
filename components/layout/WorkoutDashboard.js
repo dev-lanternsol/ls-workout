@@ -22,15 +22,36 @@ export default function WorkoutDashboard() {
   });
   const [userTotals, setUserTotals] = useState([]);
   const [userAvatars, setUserAvatars] = useState({});
+  
+  // Date range state - default to last 30 days
+  const [dateRange, setDateRange] = useState(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    return {
+      startDate: start.toISOString().split('T')[0],
+      endDate: end.toISOString().split('T')[0]
+    };
+  });
 
   // Simulated Supabase data fetching
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        // Recent workouts
-        const { data: workoutsData } = await supabase
+        // Recent workouts filtered by date range
+        let workoutsQuery = supabase
           .from('workouts_with_user')
-          .select(`*`).order('created_at', { ascending: false }).limit(20);
+          .select(`*`)
+          .order('created_at', { ascending: false });
+
+        // Add date range filtering
+        if (dateRange.startDate && dateRange.endDate) {
+          workoutsQuery = workoutsQuery
+            .gte('date', dateRange.startDate)
+            .lte('date', dateRange.endDate);
+        }
+
+        const { data: workoutsData } = await workoutsQuery.limit(20);
         setWorkouts(workoutsData);
 
         // Fetch user avatars from team_users
@@ -44,13 +65,44 @@ export default function WorkoutDashboard() {
         console.log('Avatar map:', avatarMap);
         setUserAvatars(avatarMap);
 
-        // Totals per user (lifetime)
-        const { data: userTotalsData } = await supabase
-          .from('v_workouts_user_totals')
-          .select('*')
-          .order('workouts', { ascending: false })
-          .limit(20);
-        setUserTotals(userTotalsData || []);
+        // Totals per user for the selected date range
+        let userTotalsQuery = supabase
+          .from('workouts_with_user')
+          .select('user_id, user_name, duration_minutes, calories_burned')
+          .order('created_at', { ascending: false });
+
+        // Add date range filtering for user totals
+        if (dateRange.startDate && dateRange.endDate) {
+          userTotalsQuery = userTotalsQuery
+            .gte('date', dateRange.startDate)
+            .lte('date', dateRange.endDate);
+        }
+
+        const { data: userWorkoutsData } = await userTotalsQuery;
+        
+        // Calculate aggregated user totals
+        const userTotalsMap = {};
+        (userWorkoutsData || []).forEach(workout => {
+          const userId = workout.user_id;
+          if (!userTotalsMap[userId]) {
+            userTotalsMap[userId] = {
+              user_id: userId,
+              user_name: workout.user_name,
+              workouts: 0,
+              total_duration_minutes: 0,
+              total_calories: 0
+            };
+          }
+          userTotalsMap[userId].workouts += 1;
+          userTotalsMap[userId].total_duration_minutes += workout.duration_minutes || 0;
+          userTotalsMap[userId].total_calories += workout.calories_burned || 0;
+        });
+        
+        const userTotalsData = Object.values(userTotalsMap)
+          .sort((a, b) => b.workouts - a.workouts)
+          .slice(0, 20);
+        
+        setUserTotals(userTotalsData);
 
         // Stats
         const totalCalories = (workoutsData || []).reduce((sum, w) => sum + (w.calories_burned || 0), 0);
@@ -71,7 +123,7 @@ export default function WorkoutDashboard() {
     fetchAll();
     const interval = setInterval(fetchAll, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [dateRange]);
 
   // Chart data for daily activity and calories burned
   const chartData = (workouts || []).reduce((acc, workout) => {
@@ -103,7 +155,10 @@ export default function WorkoutDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header 
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <StatsGrid stats={stats} />
 
@@ -135,9 +190,9 @@ export default function WorkoutDashboard() {
           </div>
         </div>
 
-        {/* Totals per user (last 30 days) */}
+        {/* Totals per user (selected date range) */}
         <div className="mb-8 bg-white rounded-xl shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Top Users by Workouts (Last 30 days)</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Top Users by Workouts (Selected Date Range)</h2>
           <div className="overflow-x-auto rounded-lg">
             <table className="min-w-full text-sm border-separate border-spacing-y-1">
               <thead className="bg-gray-100 sticky top-0 z-10">

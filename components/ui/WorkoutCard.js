@@ -80,7 +80,7 @@ const WorkoutCard = ({ workout, avatarUrl }) => {
             <p className="text-sm text-gray-500">{formatDate(workout.date)} at {formatTime(workout.created_at)}</p>
           </div>
         </div>
-        <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+        <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full uppercase">
           {workout.activity_type}
         </span>
       </div>
